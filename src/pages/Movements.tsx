@@ -7,7 +7,6 @@ import {
   Plus,
 } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
-import { ApiError } from '../services/api';
 import { useToast } from '../components/ui/Toast';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -75,7 +74,7 @@ export default function Movements() {
       setReason('');
       setReference('');
     } catch (err) {
-      toast('error', err instanceof ApiError ? err.message : 'Failed to record movement');
+      toast('error', err instanceof Error ? err.message : 'Failed to record movement');
     }
   };
 

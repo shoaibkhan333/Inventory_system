@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Plus, Truck, Pencil, Trash2, Mail, Phone, MapPin, User } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
-import { ApiError } from '../services/api';
 import { useToast } from '../components/ui/Toast';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -64,7 +63,7 @@ export default function Suppliers() {
       }
       setModal(false);
     } catch (err) {
-      toast('error', err instanceof ApiError ? err.message : 'Failed to save supplier');
+      toast('error', err instanceof Error ? err.message : 'Failed to save supplier');
     }
   };
 
@@ -81,7 +80,7 @@ export default function Suppliers() {
         toast('success', 'Supplier deleted');
         setDeleteModal(false);
       } catch (err) {
-        toast('error', err instanceof ApiError ? err.message : 'Failed to delete supplier');
+        toast('error', err instanceof Error ? err.message : 'Failed to delete supplier');
       }
     }
   };

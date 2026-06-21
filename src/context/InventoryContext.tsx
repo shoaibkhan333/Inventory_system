@@ -20,8 +20,7 @@ import type {
   AppSettings,
   DashboardStats,
 } from '../types';
-import { defaultSettings } from '../utils/storage';
-import { api } from '../services/api';
+import { defaultSettings, loadState, saveState, generateId, seedData } from '../utils/storage';
 
 type Action =
   | { type: 'LOAD'; payload: InventoryState }
@@ -154,14 +153,17 @@ const InventoryContext = createContext<InventoryContextValue | null>(null);
 export function InventoryProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, emptyState);
   const [loading, setLoading] = useState(true);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    api.inventory
-      .getState()
-      .then((data) => dispatch({ type: 'LOAD', payload: data }))
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    dispatch({ type: 'LOAD', payload: loadState() });
+    setLoading(false);
+    setReady(true);
   }, []);
+
+  useEffect(() => {
+    if (ready) saveState(state);
+  }, [state, ready]);
 
   useEffect(() => {
     if (state.settings.darkMode) {
@@ -172,66 +174,95 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   }, [state.settings.darkMode]);
 
   const addProduct = useCallback(async (data: ProductFormData) => {
-    const product = await api.inventory.addProduct(data);
+    const now = new Date().toISOString();
+    const product: Product = { id: generateId('prod'), ...data, createdAt: now, updatedAt: now };
     dispatch({ type: 'ADD_PRODUCT', payload: product });
   }, []);
 
   const updateProduct = useCallback(async (id: string, data: ProductFormData) => {
-    const product = await api.inventory.updateProduct(id, data);
+    const existing = state.products.find((p) => p.id === id);
+    if (!existing) throw new Error('Product not found');
+    const product: Product = { ...existing, ...data, updatedAt: new Date().toISOString() };
     dispatch({ type: 'UPDATE_PRODUCT', payload: product });
-  }, []);
+  }, [state.products]);
 
   const deleteProduct = useCallback(async (id: string) => {
-    await api.inventory.deleteProduct(id);
     dispatch({ type: 'DELETE_PRODUCT', payload: id });
   }, []);
 
   const addCategory = useCallback(async (data: CategoryFormData) => {
-    const category = await api.inventory.addCategory(data);
+    const category: Category = {
+      id: generateId('cat'),
+      ...data,
+      createdAt: new Date().toISOString(),
+    };
     dispatch({ type: 'ADD_CATEGORY', payload: category });
   }, []);
 
   const updateCategory = useCallback(async (id: string, data: CategoryFormData) => {
-    const category = await api.inventory.updateCategory(id, data);
-    dispatch({ type: 'UPDATE_CATEGORY', payload: category });
-  }, []);
+    const existing = state.categories.find((c) => c.id === id);
+    if (!existing) throw new Error('Category not found');
+    dispatch({ type: 'UPDATE_CATEGORY', payload: { ...existing, ...data } });
+  }, [state.categories]);
 
   const deleteCategory = useCallback(async (id: string) => {
-    await api.inventory.deleteCategory(id);
     dispatch({ type: 'DELETE_CATEGORY', payload: id });
   }, []);
 
   const addSupplier = useCallback(async (data: SupplierFormData) => {
-    const supplier = await api.inventory.addSupplier(data);
+    const supplier: Supplier = {
+      id: generateId('sup'),
+      ...data,
+      createdAt: new Date().toISOString(),
+    };
     dispatch({ type: 'ADD_SUPPLIER', payload: supplier });
   }, []);
 
   const updateSupplier = useCallback(async (id: string, data: SupplierFormData) => {
-    const supplier = await api.inventory.updateSupplier(id, data);
-    dispatch({ type: 'UPDATE_SUPPLIER', payload: supplier });
-  }, []);
+    const existing = state.suppliers.find((s) => s.id === id);
+    if (!existing) throw new Error('Supplier not found');
+    dispatch({ type: 'UPDATE_SUPPLIER', payload: { ...existing, ...data } });
+  }, [state.suppliers]);
 
   const deleteSupplier = useCallback(async (id: string) => {
-    await api.inventory.deleteSupplier(id);
     dispatch({ type: 'DELETE_SUPPLIER', payload: id });
   }, []);
 
   const addMovement = useCallback(
     async (productId: string, type: MovementType, quantity: number, reason: string, reference: string) => {
-      const movement = await api.inventory.addMovement({ productId, type, quantity, reason, reference });
+      const product = state.products.find((p) => p.id === productId);
+      if (!product) throw new Error('Product not found');
+
+      let delta = quantity;
+      if (type === 'out') delta = -Math.abs(quantity);
+      if (type === 'in') delta = Math.abs(quantity);
+
+      const previousQuantity = product.quantity;
+      const newQuantity = Math.max(0, previousQuantity + delta);
+      const now = new Date().toISOString();
+
+      const movement: StockMovement = {
+        id: generateId('mov'),
+        productId,
+        type,
+        quantity: type === 'adjustment' ? quantity : Math.abs(quantity),
+        previousQuantity,
+        newQuantity,
+        reason,
+        reference,
+        createdAt: now,
+      };
       dispatch({ type: 'ADD_MOVEMENT', payload: movement });
     },
-    []
+    [state.products]
   );
 
   const updateSettings = useCallback(async (settings: Partial<AppSettings>) => {
-    const updated = await api.inventory.updateSettings(settings);
-    dispatch({ type: 'UPDATE_SETTINGS', payload: updated });
+    dispatch({ type: 'UPDATE_SETTINGS', payload: settings });
   }, []);
 
   const resetData = useCallback(async () => {
-    const data = await api.inventory.reset();
-    dispatch({ type: 'LOAD', payload: data });
+    dispatch({ type: 'LOAD', payload: structuredClone(seedData) });
   }, []);
 
   const exportData = useCallback(() => {
@@ -242,9 +273,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     try {
       const parsed = JSON.parse(json) as InventoryState;
       if (!parsed.products || !parsed.categories || !parsed.suppliers) return false;
-      await api.inventory.import(parsed);
-      const data = await api.inventory.getState();
-      dispatch({ type: 'LOAD', payload: data });
+      dispatch({ type: 'LOAD', payload: parsed });
       return true;
     } catch {
       return false;

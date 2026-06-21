@@ -1,7 +1,6 @@
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Bell, Moon, Sun, LogOut } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { Bell, Moon, Sun } from 'lucide-react';
 import { useInventory } from '../../context/InventoryContext';
-import { useAuth } from '../../context/AuthContext';
 import { getStockStatus } from '../../utils/storage';
 
 const pageTitles: Record<string, string> = {
@@ -16,8 +15,6 @@ const pageTitles: Record<string, string> = {
 
 export default function Header() {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
   const { state, updateSettings } = useInventory();
   const title = pageTitles[location.pathname] || 'StockFlow';
 
@@ -28,19 +25,12 @@ export default function Header() {
       }).length
     : 0;
 
-  const initials = user?.name
-    ? user.name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase()
-    : '??';
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const initials = state.settings.companyName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-white/80 px-6 backdrop-blur-md dark:bg-gray-950/80 lg:px-8">
@@ -75,17 +65,9 @@ export default function Header() {
             {initials}
           </div>
           <div className="hidden sm:block">
-            <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name}</p>
-            <p className="text-[10px] capitalize text-gray-500">{user?.role}</p>
+            <p className="text-sm font-medium text-gray-900 dark:text-white">{state.settings.companyName}</p>
+            <p className="text-[10px] text-gray-500">Inventory Manager</p>
           </div>
-          <button
-            onClick={handleLogout}
-            className="ml-1 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-600 dark:hover:bg-gray-800"
-            aria-label="Sign out"
-            title="Sign out"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
         </div>
       </div>
     </header>

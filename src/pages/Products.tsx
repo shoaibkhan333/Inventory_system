@@ -11,7 +11,6 @@ import {
   Filter,
 } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
-import { ApiError } from '../services/api';
 import { useToast } from '../components/ui/Toast';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -136,7 +135,7 @@ export default function Products() {
       }
       setProductModal(false);
     } catch (err) {
-      toast('error', err instanceof ApiError ? err.message : 'Failed to save product');
+      toast('error', err instanceof Error ? err.message : 'Failed to save product');
     }
   };
 
@@ -156,7 +155,7 @@ export default function Products() {
       toast('success', `Stock ${movementType === 'in' ? 'added' : movementType === 'out' ? 'removed' : 'adjusted'} successfully`);
       setMovementModal(false);
     } catch (err) {
-      toast('error', err instanceof ApiError ? err.message : 'Failed to record movement');
+      toast('error', err instanceof Error ? err.message : 'Failed to record movement');
     }
   };
 
@@ -167,7 +166,7 @@ export default function Products() {
         toast('success', 'Product deleted');
         setDeleteModal(false);
       } catch (err) {
-        toast('error', err instanceof ApiError ? err.message : 'Failed to delete product');
+        toast('error', err instanceof Error ? err.message : 'Failed to delete product');
       }
     }
   };

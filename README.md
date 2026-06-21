@@ -30,7 +30,13 @@ npm run dev
 
 Open [http://localhost:5180](http://localhost:5180) in your browser.
 
-> **Note:** The backend API must also be running: `npm run dev:server` (in a second terminal).
+### Deploy to Vercel or Netlify
+
+```bash
+npm run build
+```
+
+Deploy the repo with build command `npm run build` and output directory `dist`. No backend or environment variables required.
 
 ### Build for Production
 
