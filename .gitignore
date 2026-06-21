@@ -9,7 +9,3 @@ tsconfig.tsbuildinfo
 # Environment & secrets
 .env
 .env.*
-!.env.example
-
-# SQLite database
-server/data/

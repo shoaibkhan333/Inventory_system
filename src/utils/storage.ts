@@ -286,14 +286,6 @@ export function formatCurrency(amount: number, currency = 'USD'): string {
   }).format(amount);
 }
 
-export function formatDate(dateStr: string): string {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(new Date(dateStr));
-}
-
 export function formatDateTime(dateStr: string): string {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
