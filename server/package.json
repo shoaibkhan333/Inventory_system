@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node --watch index.js",
+    "dev": "node --watch-path=./routes --watch-path=./middleware --watch-path=./index.js --watch-path=./db.js index.js",
     "start": "node index.js"
   },
   "dependencies": {
